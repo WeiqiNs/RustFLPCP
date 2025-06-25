@@ -24,6 +24,14 @@ jobs:
           toolchain: stable
           override: true
 
-      # Run cargo tests.
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Lint
+        run: cargo clippy --all --all-targets -- -D warnings
+
+      - name: Check
+        run: cargo check --all
+
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --all
