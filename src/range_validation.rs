@@ -1,8 +1,8 @@
-use crate::utils::{utils, Message, Proof, Query};
+use crate::utilities::{Message, Proof, Query, utils};
 use ark_bls12_381::Fr as F;
 use ark_ff::{Field, One, Zero};
 
-/// The binary check circuit struct, containing essential fields.
+/// Represents the range validation scheme.
 pub struct RangeValidation {
     lower: usize,
     degree: usize,
@@ -13,13 +13,15 @@ pub struct RangeValidation {
 }
 
 impl RangeValidation {
-    /// Create a new RangeValidation instance from the input size.
-    ///
-    /// # Arguments
-    ///
-    /// * `input_size`: the expected size of vectors to the circuit.
-    ///
-    /// returns: RangeValidation
+    /// Create a new `RangeValidation` instance given input size and the bounds for the proof.
+    /// 
+    /// # Arguments 
+    /// 
+    /// * `input_size`: the number of elements in the input vector.
+    /// * `lower`: the lower bound of the range proof.
+    /// * `upper`: the upper bound of the range proof.
+    /// 
+    /// returns: a configured `RangeValidation` instance. 
     pub fn new(input_size: usize, lower: usize, upper: usize) -> Self {
         let degree = upper - lower + 1;
         let num_gate = input_size;
@@ -35,16 +37,14 @@ impl RangeValidation {
         }
     }
 
-    /// Generate the proof for a message.
-    ///
-    /// The proof is format of x || c || p.
+    /// Generates a proof that the given message vector consists of integers.
     ///
     /// # Arguments
     ///
-    /// * `message`: a vector of u64 integers.
+    /// * `message`: a vector of usize integers.
     ///
-    /// returns: a vector of field elements, necessary portions for linear access of the proof.
-    pub fn proof_gen(&self, message: Message) -> Proof {
+    /// returns: a vector of field elements, in format of message || c || p.
+    pub fn proof_gen(&self, message: &Message) -> Proof {
         // Convert the message to field elements.
         let f_message: Vec<F> = message.iter().map(|&x| F::from(x as u64)).collect();
 
@@ -56,7 +56,7 @@ impl RangeValidation {
         // Construct input x points.
         let x: Vec<F> = (0..=f_message.len()).map(|i| F::from(i as u64)).collect();
 
-        // Create attach c at the beginning of message to create y vectors.
+        // Evaluate `degree` number of f polynomials.
         let polynomials: Vec<Vec<F>> = constants
             .iter()
             .enumerate()
@@ -79,13 +79,9 @@ impl RangeValidation {
         [f_message, constants, p].concat()
     }
 
-    /// Generate verification queries based on a random value.
+    /// Generates query vectors for validating the proof.
     ///
-    /// # Arguments
-    ///
-    /// * `r`: a field element.
-    ///
-    /// returns: a tuple of queries for verification.
+    /// returns: a `Query` struct containing the f, p, and c query vectors.
     pub fn query_gen(&self) -> Query {
         // Sample a value larger than the input size.
         let r = utils::random_larger_than(self.input_size);
@@ -112,7 +108,11 @@ impl RangeValidation {
             let f_vec: Vec<Vec<F>> = lagrange_basis
                 .iter()
                 .zip(a_mat.iter())
-                .map(|(&basis, row)| row.iter().map(|&value| basis * value).collect())
+                .map(|(&basis, row)| row
+                    .iter()
+                    .map(|&value| basis * value)
+                    .collect()
+                )
                 .collect();
 
             // Sum across rows to get final vector.
@@ -123,21 +123,21 @@ impl RangeValidation {
             f_poly_vec.push(f_vec_sum);
         }
 
-        // Build p_poly: [0; total_size - proof_size] || [r^0, r^1, ..., r^{proof_size-1}]
+        // Build p_poly: [0; total_size - proof_size] || [r^0, r^1, ..., r^{proof_size-1}].
         let mut p_poly = vec![F::zero(); self.total_size - self.proof_size];
         p_poly.extend((0..self.proof_size).map(|i| r.pow([i as u64])));
 
-        // Build c_poly
+        // Build c_poly.
         let mut queries = vec![vec![F::zero(); self.proof_size]; self.num_gate];
 
         for (i, query_row) in queries.iter_mut().enumerate() {
             let temp_r = utils::random_larger_than(0);
-            for j in 0..self.proof_size {
-                query_row[j] = temp_r * F::from((i + 1) as u64).pow([j as u64]);
+            for (j, item) in query_row.iter_mut().enumerate().take(self.proof_size) {
+                *item = temp_r * F::from((i + 1) as u64).pow([j as u64]);
             }
         }
 
-        // Sum over each column and prepend zeros
+        // Sum the query in columns.
         let mut c_poly = vec![F::zero(); self.total_size - self.proof_size];
         c_poly.extend((0..self.proof_size).map(|j| queries.iter().map(|row| row[j]).sum::<F>()));
 
@@ -149,15 +149,17 @@ impl RangeValidation {
         }
     }
 
-    /// Perform verification assuming linear access to the proof vector.
-    ///
-    /// # Arguments
-    ///
-    /// * `proof`: the generated proof vector.
-    /// * `query`: the generated query vectors.
-    ///
-    /// returns: bool, indicating whether the validation was successful.
-    pub fn verify(&self, proof: Proof, query: Query) -> bool {
+
+    /// Verifies that a given proof satisfies the validation scheme.
+    /// 
+    /// # Arguments 
+    /// 
+    /// * `proof`: the proof vector to be verified.
+    /// * `query`: the query vectors generated by `query_gen`.
+    /// * `lower`: lower bound that was used in the proof.
+    /// 
+    /// returns: bool, indicating whether the validation was successful. 
+    pub fn verify(proof: &Proof, query: &Query, lower: usize) -> bool {
         // Unpack the query.
         let Query {
             f_queries,
@@ -168,20 +170,20 @@ impl RangeValidation {
         // Compute a_i = ⟨f_i, proof⟩.
         let a_list: Vec<F> = f_queries
             .iter()
-            .map(|f| utils::inner_product(f, &*proof))
+            .map(|f| utils::inner_product(f, proof))
             .collect();
 
         // Compute p_value = a_0 * (a_1 - 1).
         let mut p_value = F::one();
-        for (i, a) in a_list.iter().enumerate() {
-            p_value *= *a - F::from((self.lower + i) as u64);
+        for (i, &a) in a_list.iter().enumerate() {
+            p_value *= a - F::from((lower + i) as u64);
         }
 
         // Evaluate polynomial p: ⟨p_query, proof⟩.
-        let p_prime_value = utils::inner_product(&*p_query, &*proof);
+        let p_prime_value = utils::inner_product(p_query, proof);
 
         // Evaluate output polynomial: ⟨c_query, proof⟩.
-        let c_value = utils::inner_product(&*output_query, &*proof);
+        let c_value = utils::inner_product(output_query, proof);
 
         // Accept if both values match and c_value == 0.
         p_value == p_prime_value && c_value.is_zero()

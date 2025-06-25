@@ -1,37 +1,60 @@
 use rust_flpcp::RangeValidation;
-
 #[test]
-// This test is for a validated circuit, the verification should pass.
-fn validate_rv_input() {
-    let range_val = RangeValidation::new(10, 10, 20);
+fn test_rv_input_correct() {
+    // Set an input parameters.
+    let (input_size, lower, upper) = (10, 10, 20);
 
-    let message: Vec<usize> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    // Initialize the prover.
+    let prover = RangeValidation::new(input_size, lower, upper);
+    // Generate a proof.
+    let proof = prover.proof_gen(&vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
 
-    // Generate proof and query.
-    let proof = range_val.proof_gen(message);
-    let query = range_val.query_gen();
+    // Initialize the verifier.
+    let verifier = RangeValidation::new(input_size, lower, upper);
+    // Generate verification query.
+    let query = verifier.query_gen();
 
-    // Perform verification.
-    let result = range_val.verify(proof, query);
-
-    // The result should be true.
-    assert!(result);
+    // The verification result should be true.
+    assert!(RangeValidation::verify(&proof, &query, lower));
 }
 
 #[test]
-// This test is for a validated circuit, the verification should NOT pass.
-fn invalidate_rv_input() {
-    let range_val = RangeValidation::new(12, 10, 20);
+fn test_rv_input_incorrect() {
+    // Set an input parameters.
+    let (input_size, lower, upper) = (11, 10, 20);
 
-    let message: Vec<usize> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+    // Initialize the prover.
+    let prover = RangeValidation::new(input_size, lower, upper);
+    // Generate a proof.
+    let proof = prover.proof_gen(&vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 100]);
 
-    // Generate proof and query.
-    let proof = range_val.proof_gen(message);
-    let query = range_val.query_gen();
+    // Initialize the verifier.
+    let verifier = RangeValidation::new(input_size, lower, upper);
+    // Generate verification query.
+    let query = verifier.query_gen();
 
-    // Perform verification.
-    let result = range_val.verify(proof, query);
+    // The verification result should be true.
+    assert!(!RangeValidation::verify(&proof, &query, lower));
+}
 
-    // The result should be true.
-    assert!(!result);
+#[test]
+fn test_rv_input_mixed() {
+    // Set an input parameters.
+    let (input_size, lower, upper) = (12, 10, 20);
+
+    // Initialize the prover.
+    let prover = RangeValidation::new(input_size, lower, upper);
+    // Generate proofs.
+    let proof1 = prover.proof_gen(&vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 10]);
+    let proof2 = prover.proof_gen(&vec![100, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 10]);
+
+    // Initialize the verifier.
+    let verifier = RangeValidation::new(input_size, lower, upper);
+    // Generate verification query.
+    let query = verifier.query_gen();
+
+    // The first verification should be true.
+    assert!(RangeValidation::verify(&proof1, &query, lower));
+    // The second verification should be false.
+    assert!(!RangeValidation::verify(&proof2, &query, lower));
 }
