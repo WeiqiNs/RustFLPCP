@@ -11,9 +11,36 @@ pub struct Query {
 
 pub mod utils {
     /// Use F from super and import necessary modules.
-    use super::F;
+    use super::{F, Message};
     use ark_ff::{One, UniformRand, Zero};
 
+    /// Convert a number to a binary of desired length.
+    /// 
+    /// 5 to length 5 is [1, 0, 1, 0, 0].
+    ///
+    /// # Arguments
+    ///
+    /// * `x`: the number fo convert.
+    /// * `length`: the desired length of the binary vector.
+    ///
+    /// returns: a vector of integers of desired length.
+    pub fn int_to_fixed_binary(x: usize, length: usize) -> Message {
+        let mut bin_str = format!("{:b}", x);
+
+        // Truncate or pad with zeros to fit desired length.
+        if bin_str.len() < length {
+            bin_str = format!("{:0>width$}", bin_str, width = length);
+        } else {
+            bin_str = bin_str[bin_str.len() - length..].to_string();
+        }
+
+        // Convert reversed binary string to vector of integers.
+        bin_str
+            .chars()
+            .rev()
+            .map(|c| c.to_digit(2).unwrap() as usize)
+            .collect()
+    }
 
     /// Compute inner product between two vectors.
     ///
@@ -23,13 +50,13 @@ pub mod utils {
     /// * `y_vec`: a vector of field element.
     ///
     /// returns: a field element.
-    pub fn inner_product(x_vec: &[F], y_vec: &[F]) -> F {
+    pub fn inner_product(vec_x: &[F], vec_y: &[F]) -> F {
         assert_eq!(
-            x_vec.len(),
-            y_vec.len(),
+            vec_x.len(),
+            vec_y.len(),
             "Vectors must have the same length"
         );
-        x_vec.iter().zip(y_vec).map(|(x, y)| *x * *y).sum()
+        vec_x.iter().zip(vec_y).map(|(x, y)| *x * *y).sum()
     }
 
     /// Randomly sample an element from the field larger than integer x.
@@ -93,7 +120,7 @@ pub mod utils {
                     continue;
                 }
                 let denom = x_vals[i] - x_vals[j];
-                let base = vec![-x_vals[j], F::one()];
+                let base = [-x_vals[j], F::one()];
                 let scaled: Vec<F> = base.iter().map(|&c| c / denom).collect();
                 term_coeffs = multiply_polynomials(&term_coeffs, &scaled);
             }
