@@ -15,7 +15,7 @@ pub mod utils {
     use ark_ff::{One, UniformRand, Zero};
 
     /// Convert a number to a binary of desired length.
-    /// 
+    ///
     /// 5 to length 5 is [1, 0, 1, 0, 0].
     ///
     /// # Arguments

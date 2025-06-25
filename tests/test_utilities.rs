@@ -1,5 +1,5 @@
-use rust_flpcp::utils;
 use ark_bls12_381::Fr as F;
+use rust_flpcp::utils;
 
 #[test]
 fn test_int_to_fixed_binary() {

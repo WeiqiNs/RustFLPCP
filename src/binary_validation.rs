@@ -101,11 +101,7 @@ impl BinaryValidation {
             let f_vec: Vec<Vec<F>> = lagrange_basis
                 .iter()
                 .zip(a_mat.iter())
-                .map(|(&basis, row)| row
-                    .iter()
-                    .map(|&value| basis * value)
-                    .collect()
-                )
+                .map(|(&basis, row)| row.iter().map(|&value| basis * value).collect())
                 .collect();
 
             // Sum across rows to get final vector.
@@ -143,11 +139,11 @@ impl BinaryValidation {
     }
 
     /// Verifies that a given proof satisfies the validation scheme.
-    /// 
+    ///
     /// This function checks two constraints:
     /// 1. The G-gate evaluation, for example: `p = a_0 * (a_1 - 1) = ⟨p_query, proof⟩`
     /// 2. The final output of the circuit: `⟨output_query, proof⟩ == 0`
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `proof`: the proof vector to be verified.

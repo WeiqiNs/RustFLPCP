@@ -13,16 +13,15 @@ pub struct NormBoundValidation {
     input_bound: usize,
 }
 
-
 impl NormBoundValidation {
     /// Create a new `NormBoundValidation` instance given input size and the bounds for the proof.
-    /// 
-    /// # Arguments 
-    /// 
+    ///
+    /// # Arguments
+    ///
     /// * `input_size`: the number of elements in the input vector.
     /// * `norm_bound`: the bit length of the L2 norm.
     /// * `input_bound`: the bit length on each input.
-    /// 
+    ///
     /// returns: a configured `NormBoundValidation` instance.
     pub fn new(input_size: usize, norm_bound: usize, input_bound: usize) -> Self {
         let degree = 2;
@@ -42,11 +41,11 @@ impl NormBoundValidation {
     }
 
     /// Attach binary representation to the input message and compute the L2 norm.
-    /// 
-    /// # Arguments 
-    /// 
+    ///
+    /// # Arguments
+    ///
     /// * `message`: a vector of usize integers.
-    /// 
+    ///
     /// returns: a vector of usize integers, with attached binary numbers and L2 norm.
     pub fn prepare_message(&self, message: &Message) -> Message {
         let mut result = message.clone();
@@ -173,7 +172,7 @@ impl NormBoundValidation {
         // This is the query to verify the norm bound binary representation is correct.
         let mut temp_query = vec![F::one(); self.input_size];
         temp_query.extend(vec![F::zero(); self.total_size - self.input_size]);
-        
+
         // Evaluate the polynomial from p(1) to p(input_size).
         for i in 1..=self.input_size {
             for j in 0..self.proof_size {
@@ -181,7 +180,7 @@ impl NormBoundValidation {
                 temp_query[index] += F::from(i as u64).pow([j as u64]);
             }
         }
-        
+
         // Minus the binary representation.
         for i in 0..self.norm_bound {
             let index = self.input_size * (self.input_bound + 1) + i;
