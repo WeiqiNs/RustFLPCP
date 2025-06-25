@@ -1,5 +1,5 @@
 [package]
-name = "RustFLPCP"
+name = "rust_flpcp"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,4 +7,3 @@ edition = "2024"
 ark-bls12-381 = "0.5.0"
 ark-ff = "0.5.0"
 ark-std = "0.5.0"
-rand = "0.9.1"
