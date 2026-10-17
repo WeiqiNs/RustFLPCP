@@ -1,6 +1,4 @@
-use super::{
-    BIT, binary_sum, bit_gadget, bit_width, call_each, check_field_bits, low_bits, u64_bits,
-};
+use super::{BIT, binary_sum, bit_gadget, call_each, check_field_bits, low_bits, u64_bits};
 use crate::circuit::{Circuit, Gadget, GadgetCalls, Wire};
 use crate::error::FlpError;
 use ark_ff::Field;
@@ -32,7 +30,7 @@ impl BitRange {
     }
 
     fn gap_bits(&self) -> usize {
-        bit_width(self.span()).max(1)
+        self.span().bit_width().max(1) as usize
     }
 
     fn upper_gap_bits(&self) -> usize {
@@ -82,6 +80,6 @@ impl<F: Field> Circuit<F> for BitRange {
             return Err(FlpError::EmptyBounds);
         }
         check_field_bits::<F>(self.gap_bits() + 1)?;
-        check_field_bits::<F>(bit_width(*self.bounds.end()))
+        check_field_bits::<F>(self.bounds.end().bit_width() as usize)
     }
 }

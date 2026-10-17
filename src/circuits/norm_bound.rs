@@ -1,6 +1,4 @@
-use super::{
-    BIT, binary_sum, bit_gadget, bit_width, call_each, check_field_bits, low_bits, square_via_bit,
-};
+use super::{BIT, binary_sum, bit_gadget, call_each, check_field_bits, low_bits, square_via_bit};
 use crate::circuit::{Circuit, Gadget, GadgetCalls, GadgetId, Wire};
 use crate::error::FlpError;
 use crate::gadgets::{ParallelSum, Square};
@@ -132,7 +130,7 @@ impl<F: Field> Circuit<F> for NormBound {
                 len: self.len,
             });
         }
-        let len_bits = bit_width(self.len as u64);
+        let len_bits = self.len.bit_width() as usize;
         check_field_bits::<F>(self.input_bits.saturating_mul(2).saturating_add(len_bits))?;
         check_field_bits::<F>(self.norm_bits)
     }

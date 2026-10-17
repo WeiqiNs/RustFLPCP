@@ -138,6 +138,7 @@ impl<F: FftField> GadgetPlan<F> {
         if gadget.degree() == 0 {
             return Err(FlpError::ZeroDegree { gadget: id });
         }
+        gadget.check_params()?;
         if calls.is_empty() {
             return Err(FlpError::UnusedGadget { gadget: id });
         }

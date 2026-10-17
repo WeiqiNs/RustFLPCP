@@ -2,13 +2,13 @@
 name = "rust_flpcp"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.86"
 description = "Fully linear PCPs with explicit linear queries, for verifying secret or encrypted client inputs"
 license = "MIT"
 repository = "https://github.com/WeiqiNs/RustFLPCP"
 readme = "README.md"
 keywords = ["zero-knowledge", "pcp", "cryptography", "encryption", "arkworks"]
 categories = ["cryptography"]
+exclude = [".github", "codecov.yml", "deny.toml", "CLAUDE.md"]
 
 [dependencies]
 ark-ff = "0.6.0"

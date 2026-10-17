@@ -1,4 +1,4 @@
-use super::{bit_width, call_each, check_field_bits};
+use super::call_each;
 use crate::circuit::{Circuit, Gadget, GadgetCalls, GadgetId, Wire};
 use crate::error::FlpError;
 use crate::gadgets::RangeProduct;
@@ -37,6 +37,6 @@ impl<F: Field> Circuit<F> for Range {
         if self.bounds.is_empty() {
             return Err(FlpError::EmptyBounds);
         }
-        check_field_bits::<F>(bit_width(*self.bounds.end()))
+        Ok(())
     }
 }

@@ -12,10 +12,9 @@ pub use norm_bound::{NormBound, SignedNormBound};
 pub use one_hot::OneHot;
 pub use range::Range;
 
-use crate::circuit::{Gadget, GadgetCalls, GadgetId, Wire};
-use crate::error::FlpError;
+use crate::circuit::{Gadget, GadgetCalls, GadgetId, Wire, check_field_bits};
 use crate::gadgets::RangeProduct;
-use ark_ff::{Field, PrimeField};
+use ark_ff::Field;
 use std::ops::Add;
 use std::{iter, slice};
 
@@ -58,16 +57,4 @@ fn low_bits<F: Field>(
 
 fn u64_bits(value: u64) -> impl Iterator<Item = bool> {
     (0..u64::BITS).map(move |index| (value >> index) & 1 == 1)
-}
-
-fn bit_width(value: u64) -> usize {
-    (u64::BITS - value.leading_zeros()) as usize
-}
-
-fn check_field_bits<F: Field>(bits: usize) -> Result<(), FlpError> {
-    let limit = F::BasePrimeField::MODULUS_BIT_SIZE as usize - 1;
-    if bits > limit {
-        return Err(FlpError::ExceedsField { bits, limit });
-    }
-    Ok(())
 }

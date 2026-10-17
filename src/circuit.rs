@@ -1,5 +1,5 @@
 use crate::error::FlpError;
-use ark_ff::Field;
+use ark_ff::{Field, PrimeField};
 use std::fmt::Debug;
 use std::ops::{Add, Mul, Sub};
 
@@ -20,10 +20,21 @@ pub trait Gadget<F>: Debug + Send + Sync {
     fn arity(&self) -> usize;
     fn degree(&self) -> usize;
     fn eval(&self, inputs: &[F]) -> F;
+    fn check_params(&self) -> Result<(), FlpError> {
+        Ok(())
+    }
 }
 
 pub trait GadgetCalls<W> {
     fn call(&mut self, gadget: GadgetId, inputs: &[W]) -> W;
+}
+
+pub(crate) fn check_field_bits<F: Field>(bits: usize) -> Result<(), FlpError> {
+    let limit = F::BasePrimeField::MODULUS_BIT_SIZE as usize - 1;
+    if bits > limit {
+        return Err(FlpError::ExceedsField { bits, limit });
+    }
+    Ok(())
 }
 
 pub trait Circuit<F: Field> {
