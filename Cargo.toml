@@ -18,6 +18,7 @@ ark-std = "0.6.0"
 [dev-dependencies]
 ark-bls12-381 = { version = "0.6.0", default-features = false, features = ["scalar_field"] }
 criterion = "0.8.2"
+rand = "0.8"
 
 [features]
 parallel = ["ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel"]
