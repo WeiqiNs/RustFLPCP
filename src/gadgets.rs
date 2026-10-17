@@ -1,4 +1,5 @@
-use crate::circuit::Gadget;
+use crate::circuit::{Gadget, check_field_bits};
+use crate::error::FlpError;
 use ark_ff::Field;
 use std::collections::BTreeSet;
 use std::ops::RangeInclusive;
@@ -25,6 +26,10 @@ impl<F: Field> Gadget<F> for RangeProduct {
     fn eval(&self, inputs: &[F]) -> F {
         vanishing_product(inputs[0], self.bounds.clone())
     }
+
+    fn check_params(&self) -> Result<(), FlpError> {
+        check_field_bits::<F>(self.bounds.end().bit_width() as usize)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -43,6 +48,12 @@ impl<F: Field> Gadget<F> for SetProduct {
 
     fn eval(&self, inputs: &[F]) -> F {
         vanishing_product(inputs[0], self.values.iter().copied())
+    }
+
+    fn check_params(&self) -> Result<(), FlpError> {
+        self.values.last().map_or(Ok(()), |largest| {
+            check_field_bits::<F>(largest.bit_width() as usize)
+        })
     }
 }
 
@@ -83,6 +94,10 @@ impl<F: Field, G: Gadget<F>> Gadget<F> for ParallelSum<G> {
             .chunks(self.inner.arity())
             .map(|chunk| self.inner.eval(chunk))
             .sum()
+    }
+
+    fn check_params(&self) -> Result<(), FlpError> {
+        self.inner.check_params()
     }
 }
 

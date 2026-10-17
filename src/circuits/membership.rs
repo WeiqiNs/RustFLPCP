@@ -1,4 +1,4 @@
-use super::{call_each, check_field_bits};
+use super::call_each;
 use crate::circuit::{Circuit, Gadget, GadgetCalls, GadgetId, Wire};
 use crate::error::FlpError;
 use crate::gadgets::SetProduct;
@@ -27,9 +27,9 @@ impl<F: Field> Circuit<F> for Membership {
     }
 
     fn check_params(&self) -> Result<(), FlpError> {
-        let Some(largest) = self.values.last() else {
+        if self.values.is_empty() {
             return Err(FlpError::EmptySet);
-        };
-        check_field_bits::<F>(largest.bit_width() as usize)
+        }
+        Ok(())
     }
 }
