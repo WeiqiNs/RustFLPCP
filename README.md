@@ -67,9 +67,10 @@ never use it to batch zero checks.
 
 - Pass a cryptographically secure generator (`rand` 0.8, such as `OsRng`); `test_rng()` is for
   tests only.
-- The `Query` holds the verifier's secret randomness: keep it from the prover and generate a
-  fresh one for each proof. Answering the same vector under two queries reveals a linear function
-  of the input.
+- The `Query` holds the verifier's secret randomness: keep it from the prover. Never answer one
+  vector under two different queries, which reveals a linear function of the input. Reusing one
+  query across many provers, as PEAR does, is covered by the reusable soundness and zero-knowledge
+  proofs in the PEAR paper.
 - A cheating proof passes with probability about its polynomial degree over the field size.
 
 ## Using it
