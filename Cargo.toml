@@ -2,8 +2,34 @@
 name = "rust_flpcp"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.86"
+description = "Fully linear PCPs with explicit linear queries, for verifying secret or encrypted client inputs"
+license = "MIT"
+repository = "https://github.com/WeiqiNs/RustFLPCP"
+readme = "README.md"
+keywords = ["zero-knowledge", "pcp", "cryptography", "encryption", "arkworks"]
+categories = ["cryptography"]
 
 [dependencies]
-ark-bls12-381 = "0.5.0"
-ark-ff = "0.5.0"
-ark-std = "0.5.0"
+ark-ff = "0.6.0"
+ark-poly = "0.6.0"
+ark-std = "0.6.0"
+
+[dev-dependencies]
+ark-bls12-381 = { version = "0.6.0", default-features = false, features = ["scalar_field"] }
+criterion = "0.8.2"
+
+[features]
+parallel = ["ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel"]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_errors_doc = "allow"
+
+[[bench]]
+name = "flp"
+harness = false
