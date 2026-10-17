@@ -6,11 +6,11 @@
 RustFLPCP lets a client prove its input is valid, such as a one-hot vote or a vector with a
 bounded norm, to a verifier that only computes linear functions of the input and the proof. The
 check therefore works on data the verifier cannot read: inner-product functional encryption
-(IPFE) ciphertexts or secret shares. It implements Theorem 4.3 of
-[Boneh et al.](https://eprint.iacr.org/2019/188) as a generic engine and is the proof layer of
-[PEAR](https://eprint.iacr.org/2025/420) (PETS 2025): write a validity circuit once and get a
-prover, explicit linear queries, and a decision procedure over any
-[arkworks](https://arkworks.rs) FFT field. Proving a 1,024-entry one-hot vector takes about
+(IPFE) ciphertexts or secret shares. It implements the fully linear PCPs of
+[Boneh et al. (CRYPTO 2019)](https://doi.org/10.1007/978-3-030-26954-8_3) as a generic engine
+and is the proof layer of [PEAR (PoPETs 2025)](https://doi.org/10.56553/popets-2025-0171):
+write a validity circuit once and get a prover, explicit linear queries, and a decision
+procedure over any [arkworks](https://arkworks.rs) FFT field. Proving a 1,024-entry one-hot vector takes about
 1.5 ms and verifying it about 0.12 ms on one CPU core (`cargo bench --bench flp`).
 
 ```rust
