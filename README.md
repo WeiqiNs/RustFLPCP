@@ -10,8 +10,9 @@ check therefore works on data the verifier cannot read: inner-product functional
 [Boneh et al. (CRYPTO 2019)](https://doi.org/10.1007/978-3-030-26954-8_3) as a generic engine
 and is the proof layer of [PEAR (PoPETs 2025)](https://doi.org/10.56553/popets-2025-0171):
 write a validity circuit once and get a prover, explicit linear queries, and a decision
-procedure over any [arkworks](https://arkworks.rs) FFT field. Proving a 1,024-entry one-hot vector takes about
-1.5 ms and verifying it about 0.12 ms on one CPU core (`cargo bench --bench flp`).
+procedure over any [arkworks](https://arkworks.rs) FFT field. For a 1,024-entry one-hot vector,
+proving takes about 1.5 ms, building a query about 0.6 ms, and checking the proof against it
+about 0.12 ms on one CPU core (`cargo bench --bench flp`).
 
 ```rust
 use ark_bls12_381::Fr;
@@ -47,7 +48,7 @@ Under IPFE each `coeffs` is a function key and the verifier sees only the answer
 | `Membership { len, values }` | every value is one of `values` |
 | `NormBound { len, input_bits, norm_bits, square_chunk }` | values below `2^input_bits`, sum of squares below `2^norm_bits` |
 | `SignedNormBound { .. }` | the same for signed values, as in federated-learning clipping |
-| `MeanVariance { len, input_bits }` | each claimed `y` equals `x^2`, for private mean and variance |
+| `MeanVariance { len, input_bits }` | values below `2^input_bits`, each claimed `y` equals `x^2`, for private mean and variance |
 
 Circuits with auxiliary bits build their input with `encode`. Run `cargo run --example costs`
 for each circuit's vector length and query count.
@@ -58,14 +59,17 @@ Implement `Circuit<F>`: `input_len`, `gadgets`, and an `eval` generic over `W: W
 returns outputs which must all be zero for a valid input. Wires only support affine operations;
 every multiplication goes through `calls.call(GadgetId(i), inputs)` on a gadget (`RangeProduct`,
 `SetProduct`, `Square`, `ParallelSum`, or your own `Gadget<F>`). The same `eval` builds both the
-proof and the queries. `ParallelSum` proves only a sum, so never use it to batch zero checks.
+proof and the queries. `Flp::new` runs each gadget's `check_params`, so a `RangeProduct` or
+`SetProduct` constant too large for the field is rejected. `ParallelSum` proves only a sum, so
+never use it to batch zero checks.
 
 ## Security notes
 
 - Pass a cryptographically secure generator (`rand` 0.8, such as `OsRng`); `test_rng()` is for
   tests only.
-- The `Query` holds the verifier's secret randomness: keep it from the prover, and answer each
-  vector against a single query, or zero knowledge is lost.
+- The `Query` holds the verifier's secret randomness: keep it from the prover and generate a
+  fresh one for each proof. Answering the same vector under two queries reveals a linear function
+  of the input.
 - A cheating proof passes with probability about its polynomial degree over the field size.
 
 ## Using it

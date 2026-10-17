@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
 
 permissions:
   contents: read
@@ -18,7 +20,7 @@ env:
 
 jobs:
   lint:
-    name: Format, lint, and docs
+    name: Format, lint, parallel tests, and docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -29,6 +31,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all --all-targets -- -D warnings
       - run: cargo clippy --all --all-targets --features parallel -- -D warnings
+      - run: cargo test --all --features parallel
       - run: cargo doc --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
