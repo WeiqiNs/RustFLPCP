@@ -78,10 +78,13 @@ never use it to batch zero checks.
 ```toml
 [dependencies]
 rust_flpcp = { git = "https://github.com/WeiqiNs/RustFLPCP" }
+ark-bls12-381 = { version = "0.6", default-features = false, features = ["scalar_field"] }
 rand = "0.8"
 ```
 
-The `parallel` feature enables arkworks' multithreaded FFTs.
+Any arkworks FFT field works in place of BLS12-381's scalar field. `rand` stays on 0.8 because
+arkworks 0.6 takes `rand` 0.8 generators. The `parallel` feature enables arkworks' multithreaded
+FFTs.
 
 ## Build and test
 
