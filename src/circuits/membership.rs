@@ -1,4 +1,4 @@
-use super::{bit_width, call_each, check_field_bits};
+use super::{call_each, check_field_bits};
 use crate::circuit::{Circuit, Gadget, GadgetCalls, GadgetId, Wire};
 use crate::error::FlpError;
 use crate::gadgets::SetProduct;
@@ -30,6 +30,6 @@ impl<F: Field> Circuit<F> for Membership {
         let Some(largest) = self.values.last() else {
             return Err(FlpError::EmptySet);
         };
-        check_field_bits::<F>(bit_width(*largest))
+        check_field_bits::<F>(largest.bit_width() as usize)
     }
 }

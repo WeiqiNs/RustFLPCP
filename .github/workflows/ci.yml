@@ -58,15 +58,6 @@ jobs:
           disable_search: true
           use_oidc: true
 
-  msrv:
-    name: Minimum supported Rust version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.86.0
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo test --all --all-targets --all-features --locked
-
   dependencies:
     name: Dependency audit
     runs-on: ubuntu-latest

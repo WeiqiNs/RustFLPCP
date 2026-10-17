@@ -75,7 +75,7 @@ rust_flpcp = { git = "https://github.com/WeiqiNs/RustFLPCP" }
 rand = "0.8"
 ```
 
-The `parallel` feature enables arkworks' multithreaded FFTs. The minimum Rust version is 1.86.
+The `parallel` feature enables arkworks' multithreaded FFTs.
 
 ## Build and test
 

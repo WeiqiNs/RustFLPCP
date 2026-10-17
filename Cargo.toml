@@ -2,7 +2,6 @@
 name = "rust_flpcp"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.86"
 description = "Fully linear PCPs with explicit linear queries, for verifying secret or encrypted client inputs"
 license = "MIT"
 repository = "https://github.com/WeiqiNs/RustFLPCP"

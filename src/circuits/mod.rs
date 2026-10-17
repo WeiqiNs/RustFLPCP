@@ -60,10 +60,6 @@ fn u64_bits(value: u64) -> impl Iterator<Item = bool> {
     (0..u64::BITS).map(move |index| (value >> index) & 1 == 1)
 }
 
-fn bit_width(value: u64) -> usize {
-    (u64::BITS - value.leading_zeros()) as usize
-}
-
 fn check_field_bits<F: Field>(bits: usize) -> Result<(), FlpError> {
     let limit = F::BasePrimeField::MODULUS_BIT_SIZE as usize - 1;
     if bits > limit {
