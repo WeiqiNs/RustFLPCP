@@ -4,6 +4,9 @@ use crate::error::FlpError;
 use ark_ff::{FftField, Zero};
 use ark_poly::EvaluationDomain;
 use ark_std::rand::Rng;
+use ark_std::{cfg_into_iter, cfg_iter};
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
 
 struct ProverCalls<'a, F: FftField> {
     plans: &'a [GadgetPlan<F>],
@@ -62,16 +65,12 @@ impl<F: FftField, C: Circuit<F>> Flp<F, C> {
 }
 
 fn gadget_poly<F: FftField>(plan: &GadgetPlan<F>, wires: &[Vec<F>]) -> Vec<F> {
-    let wire_evals: Vec<Vec<F>> = wires
-        .iter()
+    let wire_evals: Vec<Vec<F>> = cfg_iter!(wires)
         .map(|wire| plan.poly_domain.fft(&plan.wire_domain.ifft(wire)))
         .collect();
-    let mut point = vec![F::ZERO; wires.len()];
-    let gadget_evals: Vec<F> = (0..plan.poly_domain.size())
+    let gadget_evals: Vec<F> = cfg_into_iter!(0..plan.poly_domain.size())
         .map(|index| {
-            for (coordinate, evals) in point.iter_mut().zip(&wire_evals) {
-                *coordinate = evals[index];
-            }
+            let point: Vec<F> = wire_evals.iter().map(|evals| evals[index]).collect();
             plan.gadget.eval(&point)
         })
         .collect();

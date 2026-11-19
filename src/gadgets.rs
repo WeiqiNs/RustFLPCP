@@ -24,7 +24,13 @@ impl<F: Field> Gadget<F> for RangeProduct {
     }
 
     fn eval(&self, inputs: &[F]) -> F {
-        vanishing_product(inputs[0], self.bounds.clone())
+        let mut shifted = inputs[0] - F::from(*self.bounds.start());
+        let mut product = F::ONE;
+        for _ in self.bounds.clone() {
+            product *= shifted;
+            shifted -= F::ONE;
+        }
+        product
     }
 
     fn check_params(&self) -> Result<(), FlpError> {
@@ -105,4 +111,30 @@ fn vanishing_product<F: Field>(x: F, roots: impl IntoIterator<Item = u64>) -> F 
     roots
         .into_iter()
         .fold(F::ONE, |product, root| product * (x - F::from(root)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{RangeProduct, vanishing_product};
+    use crate::circuit::Gadget;
+    use ark_bls12_381::Fr;
+    use ark_ff::UniformRand;
+
+    #[test]
+    #[allow(clippy::reversed_empty_ranges)]
+    fn range_product_matches_vanishing_product() {
+        let mut rng = ark_std::test_rng();
+        for bounds in [0..=0, 0..=1, 0..=15, 3..=9, 1000..=1040, 5..=4] {
+            let gadget = RangeProduct {
+                bounds: bounds.clone(),
+            };
+            for x in [Fr::from(0u64), Fr::from(7u64), Fr::rand(&mut rng)] {
+                assert_eq!(
+                    gadget.eval(&[x]),
+                    vanishing_product(x, bounds.clone()),
+                    "{bounds:?}"
+                );
+            }
+        }
+    }
 }
