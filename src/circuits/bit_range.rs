@@ -1,7 +1,7 @@
-use super::{BIT, binary_sum, bit_gadget, call_each, check_field_bits, low_bits, u64_bits};
+use super::{BIT, binary_sum, bit_gadget, call_each, check_field_bits, low_bits};
 use crate::circuit::{Circuit, Gadget, GadgetCalls, Wire};
 use crate::error::FlpError;
-use ark_ff::Field;
+use ark_ff::{BitIteratorLE, Field};
 use std::ops::RangeInclusive;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -16,12 +16,12 @@ impl BitRange {
         let (lower, upper) = (*self.bounds.start(), *self.bounds.end());
         let (lower_width, upper_width) = (self.gap_bits(), self.upper_gap_bits());
         let values = measurement.iter().map(|&value| F::from(value));
-        let lower_gaps = measurement
-            .iter()
-            .flat_map(|&value| low_bits(u64_bits(value.wrapping_sub(lower)), lower_width));
-        let upper_gaps = measurement
-            .iter()
-            .flat_map(|&value| low_bits(u64_bits(upper.wrapping_sub(value)), upper_width));
+        let lower_gaps = measurement.iter().flat_map(|&value| {
+            low_bits(BitIteratorLE::new([value.wrapping_sub(lower)]), lower_width)
+        });
+        let upper_gaps = measurement.iter().flat_map(|&value| {
+            low_bits(BitIteratorLE::new([upper.wrapping_sub(value)]), upper_width)
+        });
         values.chain(lower_gaps).chain(upper_gaps).collect()
     }
 

@@ -38,7 +38,7 @@ when every line runs. `cargo run --example costs` prints each circuit's vector l
   in-crate reference test of query construction.
 - `src/gadgets.rs`: `RangeProduct`, `SetProduct`, `Square`, `ParallelSum`.
 - `src/circuits/`: one file per shipped circuit; `mod.rs` holds the shared helpers (`BIT`, `bit_gadget`,
-  `call_each`, `square_via_bit`, `binary_sum`, `low_bits`, `u64_bits`). `norm_bound.rs` holds both
+  `call_each`, `square_via_bit`, `binary_sum`, `low_bits`). `norm_bound.rs` holds both
   `NormBound` and `SignedNormBound`, which share `eval_shifted` and `encode_shifted`.
 - `src/error.rs`: `FlpError`. `tests/`: one file per circuit plus `flp.rs` (engine) and `goldilocks.rs` (a small
   field); `tests/common` has `accepts` and `assert_tampering_rejected`.

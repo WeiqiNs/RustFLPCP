@@ -53,7 +53,9 @@ impl<F: Field> Gadget<F> for SetProduct {
     }
 
     fn eval(&self, inputs: &[F]) -> F {
-        vanishing_product(inputs[0], self.values.iter().copied())
+        self.values.iter().fold(F::ONE, |product, &root| {
+            product * (inputs[0] - F::from(root))
+        })
     }
 
     fn check_params(&self) -> Result<(), FlpError> {
@@ -105,12 +107,6 @@ impl<F: Field, G: Gadget<F>> Gadget<F> for ParallelSum<G> {
     fn check_params(&self) -> Result<(), FlpError> {
         self.inner.check_params()
     }
-}
-
-fn vanishing_product<F: Field>(x: F, roots: impl IntoIterator<Item = u64>) -> F {
-    roots
-        .into_iter()
-        .fold(F::ONE, |product, root| product * (x - F::from(root)))
 }
 
 #[cfg(test)]
