@@ -53,7 +53,9 @@ impl<F: Field> Gadget<F> for SetProduct {
     }
 
     fn eval(&self, inputs: &[F]) -> F {
-        vanishing_product(inputs[0], self.values.iter().copied())
+        self.values.iter().fold(F::ONE, |product, &root| {
+            product * (inputs[0] - F::from(root))
+        })
     }
 
     fn check_params(&self) -> Result<(), FlpError> {
@@ -107,34 +109,27 @@ impl<F: Field, G: Gadget<F>> Gadget<F> for ParallelSum<G> {
     }
 }
 
-fn vanishing_product<F: Field>(x: F, roots: impl IntoIterator<Item = u64>) -> F {
-    roots
-        .into_iter()
-        .fold(F::ONE, |product, root| product * (x - F::from(root)))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{RangeProduct, vanishing_product};
+    use super::{RangeProduct, SetProduct};
     use crate::circuit::Gadget;
     use ark_bls12_381::Fr;
     use ark_ff::UniformRand;
     use std::ops::RangeInclusive;
 
     #[test]
-    fn range_product_matches_vanishing_product() {
+    fn range_product_matches_set_product_over_its_bounds() {
         let mut rng = ark_std::test_rng();
         let empty = RangeInclusive::new(5, 4);
         for bounds in [0..=0, 0..=1, 0..=15, 3..=9, 1000..=1040, empty] {
-            let gadget = RangeProduct {
+            let range = RangeProduct {
                 bounds: bounds.clone(),
             };
+            let set = SetProduct {
+                values: bounds.clone().collect(),
+            };
             for x in [Fr::from(0u64), Fr::from(7u64), Fr::rand(&mut rng)] {
-                assert_eq!(
-                    gadget.eval(&[x]),
-                    vanishing_product(x, bounds.clone()),
-                    "{bounds:?}"
-                );
+                assert_eq!(range.eval(&[x]), set.eval(&[x]), "{bounds:?}");
             }
         }
     }

@@ -190,7 +190,7 @@ mod tests {
             let b = calls.call(GadgetId(1), &[a + input[1].clone()]);
             let c = calls.call(
                 GadgetId(0),
-                &[b.clone() * Fr::from(2u64) + W::constant(Fr::from(5u64))],
+                &[(b.clone() + W::constant(Fr::from(5u64))) * Fr::from(2u64)],
             );
             vec![c - input[2].clone(), b + input[3].clone() * Fr::from(3u64)]
         }

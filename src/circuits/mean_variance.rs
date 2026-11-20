@@ -1,9 +1,7 @@
-use super::{
-    BIT, binary_sum, bit_gadget, call_each, check_field_bits, low_bits, square_via_bit, u64_bits,
-};
+use super::{BIT, binary_sum, bit_gadget, call_each, check_field_bits, low_bits, square_via_bit};
 use crate::circuit::{Circuit, Gadget, GadgetCalls, Wire};
 use crate::error::FlpError;
-use ark_ff::Field;
+use ark_ff::{BitIteratorLE, Field};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MeanVariance {
@@ -18,7 +16,7 @@ impl MeanVariance {
         let squares = measurement.iter().map(|&value| F::from(value).square());
         let value_bits = measurement
             .iter()
-            .flat_map(|&value| low_bits(u64_bits(value), self.input_bits));
+            .flat_map(|&value| low_bits(BitIteratorLE::new([value]), self.input_bits));
         values.chain(squares).chain(value_bits).collect()
     }
 }

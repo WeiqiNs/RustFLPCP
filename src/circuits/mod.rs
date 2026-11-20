@@ -54,7 +54,3 @@ fn low_bits<F: Field>(
         .take(width)
         .map(F::from)
 }
-
-fn u64_bits(value: u64) -> impl Iterator<Item = bool> {
-    (0..u64::BITS).map(move |index| (value >> index) & 1 == 1)
-}

@@ -36,14 +36,8 @@ impl<F: Field> Add for LinearForm<F> {
 impl<F: Field> Sub for LinearForm<F> {
     type Output = Self;
 
-    fn sub(mut self, rhs: Self) -> Self {
-        self.terms.extend(
-            rhs.terms
-                .into_iter()
-                .map(|(variable, coeff)| (variable, -coeff)),
-        );
-        self.constant -= rhs.constant;
-        self
+    fn sub(self, rhs: Self) -> Self {
+        self + rhs * -F::ONE
     }
 }
 

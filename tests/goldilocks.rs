@@ -37,28 +37,33 @@ impl Circuit<Goldilocks> for SingleGadget {
 }
 
 #[test]
-fn rejects_ranges_wider_than_the_field() {
+fn bit_range_rejects_bounds_beyond_the_field() {
+    let largest_fitting = (1u64 << 63) - 1;
+    let exceeds = Some(FlpError::ExceedsField {
+        bits: 64,
+        limit: 63,
+    });
     let cases = [
-        ((1 << 62) - 1, None),
-        (
-            1 << 62,
-            Some(FlpError::ExceedsField {
-                bits: 64,
-                limit: 63,
-            }),
-        ),
+        (0..=(1 << 62) - 1, None),
+        (0..=1 << 62, exceeds.clone()),
+        (largest_fitting - 9..=largest_fitting, None),
+        (u64::MAX - 9..=u64::MAX, exceeds),
     ];
-    for (end, expected) in cases {
+    for (bounds, expected) in cases {
         let circuit = BitRange {
             len: 1,
-            bounds: 0..=end,
+            bounds: bounds.clone(),
         };
-        assert_eq!(Flp::<Goldilocks, _>::new(circuit).err(), expected, "{end}");
+        assert_eq!(
+            Flp::<Goldilocks, _>::new(circuit).err(),
+            expected,
+            "{bounds:?}"
+        );
     }
 }
 
 #[test]
-fn rejects_constants_beyond_the_field() {
+fn shipped_circuits_pass_constants_to_checked_gadgets() {
     let largest_fitting = (1u64 << 63) - 1;
     let exceeds = Some(FlpError::ExceedsField {
         bits: 64,
@@ -72,11 +77,6 @@ fn rejects_constants_beyond_the_field() {
         len: 1,
         bounds: end - 3..=end,
     };
-    let bit_range = |end: u64| BitRange {
-        len: 1,
-        bounds: end - 9..=end,
-    };
-
     assert_eq!(
         Flp::<Goldilocks, _>::new(membership(MODULUS + 5)).err(),
         exceeds
@@ -90,14 +90,6 @@ fn rejects_constants_beyond_the_field() {
         Flp::<Goldilocks, _>::new(range(largest_fitting)).err(),
         None
     );
-    assert_eq!(
-        Flp::<Goldilocks, _>::new(bit_range(u64::MAX)).err(),
-        exceeds
-    );
-    assert_eq!(
-        Flp::<Goldilocks, _>::new(bit_range(largest_fitting)).err(),
-        None
-    );
 }
 
 #[test]
@@ -106,7 +98,7 @@ fn custom_gadgets_reject_constants_beyond_the_field() {
         bits: 64,
         limit: 63,
     });
-    let cases: [(GadgetFactory, Option<FlpError>); 4] = [
+    let cases: [(GadgetFactory, Option<FlpError>); 5] = [
         (
             || {
                 Box::new(SetProduct {
@@ -138,6 +130,14 @@ fn custom_gadgets_reject_constants_beyond_the_field() {
             || {
                 Box::new(SetProduct {
                     values: BTreeSet::from([(1 << 63) - 1]),
+                })
+            },
+            None,
+        ),
+        (
+            || {
+                Box::new(RangeProduct {
+                    bounds: (1 << 63) - 4..=(1 << 63) - 1,
                 })
             },
             None,
