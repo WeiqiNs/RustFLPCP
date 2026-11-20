@@ -47,12 +47,15 @@ when every line runs. `cargo run --example costs` prints each circuit's vector l
 
 - `Flp::new` runs `Circuit::check_params`, then the circuit's `eval` once with `LinearForm` wires (`SymbolicCalls`),
   recording every gadget call's inputs and every output as linear forms, then builds a `GadgetPlan` per gadget, which
-  runs `Gadget::check_params` and the arity, usage and domain checks. All validation happens here.
+  runs `Gadget::check_params` and the arity, usage and domain checks. All parameter validation happens here.
 - Each gadget gets a radix-2 wire domain of size `(calls + 1).next_power_of_two()`: node 0 holds a random seed per
   input slot (zero knowledge), call k sits at node k + 1, and padding nodes are zero. Its proof polynomial has
   `degree * (N - 1) + 1` coefficients. The vector is `input || per gadget: seeds || polynomial coefficients`.
 - `prove` runs `eval` on field values (`ProverCalls`) to fill the wire nodes; `gadget_poly` interpolates each wire
-  (IFFT), evaluates on a larger domain (FFT), applies the gadget pointwise and interpolates back.
+  (IFFT), evaluates on a larger domain (FFT), applies the gadget pointwise and interpolates back; nonzero
+  coefficients past `poly_len` mean the gadget understates its `degree`, and `prove` returns
+  `FlpError::DegreeMismatch` (`prove_rejects_gadget_above_its_declared_degree`). With `parallel`, the per-wire
+  FFTs and per-point gadget evaluations run on rayon.
 - `query` samples a point outside the largest wire domain plus one weight per gadget and per output
   (`QueryCoins`). There is one `LinearQuery` per gadget input slot (Lagrange coefficients at the point) and one
   combined query: the weighted gadget polynomials at the point plus the weighted outputs. `QueryAccumulator::finish`
