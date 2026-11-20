@@ -4,7 +4,8 @@ A generic fully linear PCP engine (Boneh et al., CRYPTO 2019) in Rust over arkwo
 `ark_ff::FftField` and tested on BLS12-381 and Goldilocks. It is the proof layer of PEAR (PoPETs 2025):
 a client proves its input satisfies a validity circuit, and the verifier only ever needs inner products
 `<coeffs, input || proof> + constant`, which PEAR evaluates under inner-product functional encryption.
-`README.md` is the user-facing overview.
+`README.md` is the user-facing overview. The sibling NIVA crate depends on this one through a pinned git revision
+and accepts any `rust_flpcp::Circuit<F>`, so the public re-exports in `src/lib.rs` are a cross-repo contract.
 
 ## Commands
 
@@ -20,12 +21,15 @@ cargo run --example quickstart && cargo run --example costs
 cargo deny check && cargo machete
 ```
 
-CI (`.github/workflows/ci.yml`) runs these on pushes, pull requests and a weekly schedule, in three jobs on the latest
-stable Rust: lint, the test suite with `--features parallel`, and docs; tests under coverage, the benchmark smoke run
-and both examples, then an OIDC upload to Codecov; and the dependency audit.
+CI (`.github/workflows/ci.yml`) runs these on pushes to `main`, pull requests and a weekly schedule, in three jobs on
+the latest stable Rust: lint, the test suite with `--features parallel`, and docs; tests under coverage, the benchmark
+smoke run and both examples, then an OIDC upload to Codecov; and the dependency audit.
+No toolchain or MSRV is pinned: the crate is edition 2024 and uses recently stabilized std APIs, so build with a
+current stable. `cargo llvm-cov`, `cargo deny` and `cargo machete` are separately installed cargo subcommands.
 Clippy pedantic is on through `[lints]` in `Cargo.toml`. The coverage gate is `--fail-uncovered-lines 0` because
 `--fail-under-lines 100` scores each monomorphization of a generic function separately and cannot reach 100 even
-when every line runs. `cargo run --example costs` prints each circuit's vector length and query count.
+when every line runs. `cargo run --example costs` prints a table of each circuit's input, vector and proof lengths
+and query count.
 
 ## Layout
 
@@ -82,8 +86,8 @@ auxiliary bits, and reject parameters in `check_params` (bit widths through `che
 - Parameters whose decompositions or constants could wrap the field modulus fail with `FlpError::ExceedsField`
   via `check_field_bits`: circuits check their bit widths in `Circuit::check_params`, and `RangeProduct`,
   `SetProduct` and `ParallelSum` check their constants in `Gadget::check_params`, which also covers custom
-  circuits. Only fields under 64 bits can hit the `u64` constant checks (`tests/goldilocks.rs`); bit-width parameters
-  such as `NormBound::input_bits` can exceed any field (`new_rejects_unbuildable_parameters`).
+  circuits. Only fields of at most 64 bits can hit the `u64` constant checks (`tests/goldilocks.rs`); bit-width
+  parameters such as `NormBound::input_bits` can exceed any field (`new_rejects_unbuildable_parameters`).
 - `BitRange` drops the upper-gap decomposition when the bounds hold a power-of-two number of values, decided only
   in `BitRange::upper_gap_bits`; a single-value range stays unaligned (`degenerate_single_value_range`).
 - The `Query` carries the verifier's private gadget weights, so `decide` takes it alongside the answers.
