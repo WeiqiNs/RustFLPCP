@@ -159,13 +159,16 @@ impl<F: FftField, C: Circuit<F>> Flp<F, C> {
 mod tests {
     use super::QueryCoins;
     use crate::circuit::{Circuit, Gadget, GadgetCalls, GadgetId, Wire};
-    use crate::circuits::{BitRange, MeanVariance, NormBound, Range, SignedNormBound};
+    use crate::circuits::{
+        BitRange, MeanVariance, Membership, NormBound, OneHot, Range, SignedNormBound,
+    };
     use crate::flp::{Flp, GadgetPlan};
     use crate::gadgets::RangeProduct;
     use ark_bls12_381::Fr;
     use ark_ff::{AdditiveGroup, UniformRand};
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::{DenseUVPolynomial, EvaluationDomain, Polynomial};
+    use std::collections::BTreeSet;
     use std::num::NonZeroUsize;
 
     struct Composite;
@@ -288,6 +291,11 @@ mod tests {
         assert_matches_reference(MeanVariance {
             len: 3,
             input_bits: 4,
+        });
+        assert_matches_reference(OneHot { len: 3 });
+        assert_matches_reference(Membership {
+            len: 3,
+            values: BTreeSet::from([1, 4, 9]),
         });
         assert_matches_reference(Composite);
     }

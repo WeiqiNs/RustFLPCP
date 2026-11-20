@@ -12,6 +12,7 @@ a client proves its input satisfies a validity circuit, and the verifier only ev
 cargo fmt --all -- --check
 cargo clippy --all --all-targets -- -D warnings
 cargo clippy --all --all-targets --features parallel -- -D warnings
+cargo test --all --features parallel
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 cargo llvm-cov --all --fail-uncovered-lines 0
 cargo bench --bench flp -- --test
@@ -47,12 +48,16 @@ when every line runs. `cargo run --example costs` prints each circuit's vector l
 
 - `Flp::new` runs `Circuit::check_params`, then the circuit's `eval` once with `LinearForm` wires (`SymbolicCalls`),
   recording every gadget call's inputs and every output as linear forms, then builds a `GadgetPlan` per gadget, which
-  runs `Gadget::check_params` and the arity, usage and domain checks. All validation happens here.
+  runs `Gadget::check_params` and the arity, usage and domain checks. All parameter validation happens here.
 - Each gadget gets a radix-2 wire domain of size `(calls + 1).next_power_of_two()`: node 0 holds a random seed per
   input slot (zero knowledge), call k sits at node k + 1, and padding nodes are zero. Its proof polynomial has
   `degree * (N - 1) + 1` coefficients. The vector is `input || per gadget: seeds || polynomial coefficients`.
 - `prove` runs `eval` on field values (`ProverCalls`) to fill the wire nodes; `gadget_poly` interpolates each wire
-  (IFFT), evaluates on a larger domain (FFT), applies the gadget pointwise and interpolates back.
+  (IFFT), evaluates on a larger domain (FFT), applies the gadget pointwise and interpolates back; nonzero
+  coefficients past `poly_len` mean the gadget understates its `degree`, and `prove` returns
+  `FlpError::DegreeMismatch` (`prove_rejects_gadget_above_its_declared_degree`); with no spare coefficients, or
+  when higher terms alias into the kept ones, an understated degree goes undetected and the proof fails to verify.
+  With `parallel`, the per-wire FFTs and per-point gadget evaluations run on rayon.
 - `query` samples a point outside the largest wire domain plus one weight per gadget and per output
   (`QueryCoins`). There is one `LinearQuery` per gadget input slot (Lagrange coefficients at the point) and one
   combined query: the weighted gadget polynomials at the point plus the weighted outputs. `QueryAccumulator::finish`
@@ -77,7 +82,8 @@ auxiliary bits, and reject parameters in `check_params` (bit widths through `che
 - Parameters whose decompositions or constants could wrap the field modulus fail with `FlpError::ExceedsField`
   via `check_field_bits`: circuits check their bit widths in `Circuit::check_params`, and `RangeProduct`,
   `SetProduct` and `ParallelSum` check their constants in `Gadget::check_params`, which also covers custom
-  circuits. Only fields under 64 bits can hit this (`tests/goldilocks.rs`).
+  circuits. Only fields under 64 bits can hit the `u64` constant checks (`tests/goldilocks.rs`); bit-width parameters
+  such as `NormBound::input_bits` can exceed any field (`new_rejects_unbuildable_parameters`).
 - `BitRange` drops the upper-gap decomposition when the bounds hold a power-of-two number of values, decided only
   in `BitRange::upper_gap_bits`; a single-value range stays unaligned (`degenerate_single_value_range`).
 - The `Query` carries the verifier's private gadget weights, so `decide` takes it alongside the answers.

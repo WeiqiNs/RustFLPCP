@@ -40,6 +40,9 @@ pub enum FlpError {
         chunk: usize,
         len: usize,
     },
+    DegreeMismatch {
+        gadget: GadgetId,
+    },
 }
 
 impl fmt::Display for FlpError {
@@ -84,6 +87,11 @@ impl fmt::Display for FlpError {
             Self::ChunkTooLarge { chunk, len } => {
                 write!(f, "square chunk {chunk} exceeds the input length {len}")
             }
+            Self::DegreeMismatch { gadget } => write!(
+                f,
+                "gadget {} has a higher degree than it declares",
+                gadget.0
+            ),
         }
     }
 }

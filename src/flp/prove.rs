@@ -56,15 +56,17 @@ impl<F: FftField, C: Circuit<F>> Flp<F, C> {
 
         let mut vector = Vec::with_capacity(self.vector_len);
         vector.extend_from_slice(input);
-        for (plan, wires) in self.plans.iter().zip(&calls.wires) {
+        for (index, (plan, wires)) in self.plans.iter().zip(&calls.wires).enumerate() {
             vector.extend(wires.iter().map(|wire| wire[0]));
-            vector.extend(gadget_poly(plan, wires));
+            vector.extend(gadget_poly(plan, wires).ok_or(FlpError::DegreeMismatch {
+                gadget: GadgetId(index),
+            })?);
         }
         Ok(vector)
     }
 }
 
-fn gadget_poly<F: FftField>(plan: &GadgetPlan<F>, wires: &[Vec<F>]) -> Vec<F> {
+fn gadget_poly<F: FftField>(plan: &GadgetPlan<F>, wires: &[Vec<F>]) -> Option<Vec<F>> {
     let wire_evals: Vec<Vec<F>> = cfg_iter!(wires)
         .map(|wire| plan.poly_domain.fft(&plan.wire_domain.ifft(wire)))
         .collect();
@@ -75,7 +77,9 @@ fn gadget_poly<F: FftField>(plan: &GadgetPlan<F>, wires: &[Vec<F>]) -> Vec<F> {
         })
         .collect();
     let mut coeffs = plan.poly_domain.ifft(&gadget_evals);
-    debug_assert!(coeffs[plan.poly_len..].iter().all(Zero::is_zero));
+    if !coeffs[plan.poly_len..].iter().all(Zero::is_zero) {
+        return None;
+    }
     coeffs.truncate(plan.poly_len);
-    coeffs
+    Some(coeffs)
 }

@@ -84,6 +84,25 @@ impl Circuit<Fr> for SplitBitChecks {
     }
 }
 
+#[derive(Debug)]
+struct Cube {
+    declared_degree: usize,
+}
+
+impl Gadget<Fr> for Cube {
+    fn arity(&self) -> usize {
+        1
+    }
+
+    fn degree(&self) -> usize {
+        self.declared_degree
+    }
+
+    fn eval(&self, inputs: &[Fr]) -> Fr {
+        inputs[0].square() * inputs[0]
+    }
+}
+
 struct Difference {
     input_len: usize,
 }
@@ -310,6 +329,7 @@ fn error_messages_are_distinct_lowercase_sentences() {
             limit: 254,
         },
         FlpError::ChunkTooLarge { chunk: 5, len: 4 },
+        FlpError::DegreeMismatch { gadget },
     ];
     let messages: BTreeSet<String> = errors.iter().map(ToString::to_string).collect();
     assert_eq!(messages.len(), errors.len());
@@ -329,11 +349,9 @@ fn engine_types_are_thread_safe() {
 
 #[test]
 fn reports_layout_lengths() {
-    for len in [3, 4] {
+    for (len, proof_len) in [(3, 1 + 7), (4, 1 + 15)] {
         let flp = Flp::<Fr, _>::new(Range::binary(len)).unwrap();
-        let wire_size = (len + 1).next_power_of_two();
-        let poly_len = 2 * (wire_size - 1) + 1;
-        assert_eq!(flp.proof_len(), 1 + poly_len, "{len}");
+        assert_eq!(flp.proof_len(), proof_len, "{len}");
     }
 }
 
@@ -441,6 +459,27 @@ fn prove_rejects_wrong_input_length() {
         Err(FlpError::InputLength {
             expected: 3,
             actual: 2
+        })
+    );
+}
+
+#[test]
+fn prove_rejects_gadget_above_its_declared_degree() {
+    let cubes = |gadgets| ScriptedCircuit {
+        gadgets,
+        script: vec![(0, 1); 3],
+    };
+    let mut rng = ark_std::test_rng();
+    let declared =
+        Flp::<Fr, _>::new(cubes(|| vec![Box::new(Cube { declared_degree: 3 })])).unwrap();
+    let vector = declared.prove(&[Fr::ZERO; 2], &mut rng).unwrap();
+    assert!(declared.verify(&declared.query(&mut rng), &vector));
+    let understated =
+        Flp::<Fr, _>::new(cubes(|| vec![Box::new(Cube { declared_degree: 2 })])).unwrap();
+    assert_eq!(
+        understated.prove(&[Fr::ZERO; 2], &mut rng),
+        Err(FlpError::DegreeMismatch {
+            gadget: GadgetId(0)
         })
     );
 }
