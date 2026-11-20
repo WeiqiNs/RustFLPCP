@@ -14,6 +14,7 @@ exclude = [".github", "codecov.yml", "deny.toml", "CLAUDE.md"]
 ark-ff = "0.6.0"
 ark-poly = "0.6.0"
 ark-std = "0.6.0"
+rayon = { version = "1.12", optional = true }
 
 [dev-dependencies]
 ark-bls12-381 = { version = "0.6.0", default-features = false, features = ["scalar_field"] }
@@ -21,7 +22,7 @@ criterion = "0.8.2"
 rand = "0.8"
 
 [features]
-parallel = ["ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel"]
+parallel = ["dep:rayon", "ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel"]
 
 [lints.rust]
 unsafe_code = "forbid"
