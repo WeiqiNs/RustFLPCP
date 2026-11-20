@@ -3,8 +3,8 @@ mod common;
 use ark_ff::fields::{Fp64, MontBackend, MontConfig};
 use common::{accepts, assert_tampering_rejected};
 use rust_flpcp::{
-    BitRange, Circuit, Flp, FlpError, Gadget, GadgetCalls, GadgetId, ParallelSum, RangeProduct,
-    SetProduct, Wire,
+    BitRange, Circuit, Flp, FlpError, Gadget, GadgetCalls, GadgetId, Membership, ParallelSum,
+    Range, RangeProduct, SetProduct, Wire,
 };
 use std::collections::BTreeSet;
 use std::slice;
@@ -60,6 +60,36 @@ fn bit_range_rejects_bounds_beyond_the_field() {
             "{bounds:?}"
         );
     }
+}
+
+#[test]
+fn shipped_circuits_pass_constants_to_checked_gadgets() {
+    let largest_fitting = (1u64 << 63) - 1;
+    let exceeds = Some(FlpError::ExceedsField {
+        bits: 64,
+        limit: 63,
+    });
+    let membership = |value: u64| Membership {
+        len: 1,
+        values: BTreeSet::from([value]),
+    };
+    let range = |end: u64| Range {
+        len: 1,
+        bounds: end - 3..=end,
+    };
+    assert_eq!(
+        Flp::<Goldilocks, _>::new(membership(MODULUS + 5)).err(),
+        exceeds
+    );
+    assert_eq!(
+        Flp::<Goldilocks, _>::new(membership(largest_fitting)).err(),
+        None
+    );
+    assert_eq!(Flp::<Goldilocks, _>::new(range(MODULUS + 3)).err(), exceeds);
+    assert_eq!(
+        Flp::<Goldilocks, _>::new(range(largest_fitting)).err(),
+        None
+    );
 }
 
 #[test]
