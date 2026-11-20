@@ -35,6 +35,16 @@ fn accepts_consistent_squares_only() {
 }
 
 #[test]
+fn accepts_bit_widths_beyond_u64() {
+    let circuit = MeanVariance {
+        len: 2,
+        input_bits: 70,
+    };
+    let flp = Flp::<Fr, _>::new(circuit.clone()).unwrap();
+    assert!(accepts(&flp, &circuit.encode(&[u64::MAX, 1])));
+}
+
+#[test]
 fn rejects_single_coordinate_tampering() {
     let circuit = circuit();
     let flp = Flp::<Fr, _>::new(circuit.clone()).unwrap();
