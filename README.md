@@ -11,7 +11,7 @@ check therefore works on data the verifier cannot read: inner-product functional
 and is the proof layer of [PEAR (PoPETs 2025)](https://doi.org/10.56553/popets-2025-0171):
 write a validity circuit once and get a prover, explicit linear queries, and a decision
 procedure over any [arkworks](https://arkworks.rs) FFT field. For a 1,024-entry one-hot vector,
-proving takes about 1.5 ms, building a query about 0.6 ms, and checking the proof against it
+proving takes about 1.4 ms, building a query about 0.6 ms, and checking the proof against it
 about 0.12 ms on one CPU core (`cargo bench --bench flp`).
 
 ```rust
@@ -60,8 +60,10 @@ returns outputs which must all be zero for a valid input. Wires only support aff
 every multiplication goes through `calls.call(GadgetId(i), inputs)` on a gadget (`RangeProduct`,
 `SetProduct`, `Square`, `ParallelSum`, or your own `Gadget<F>`). The same `eval` builds both the
 proof and the queries. `Flp::new` runs each gadget's `check_params`, so a `RangeProduct` or
-`SetProduct` constant too large for the field is rejected. `ParallelSum` proves only a sum, so
-never use it to batch zero checks.
+`SetProduct` constant too large for the field is rejected. A gadget's `degree` must bound the
+degree of its `eval`; `prove` returns `FlpError::DegreeMismatch` when it detects an understated
+degree, and otherwise the proof fails to verify. `ParallelSum` proves only a sum, so never use it
+to batch zero checks.
 
 ## Security notes
 
@@ -84,7 +86,7 @@ rand = "0.8"
 
 Any arkworks FFT field works in place of BLS12-381's scalar field. `rand` stays on 0.8 because
 arkworks 0.6 takes `rand` 0.8 generators. The `parallel` feature enables arkworks' multithreaded
-FFTs.
+FFTs and spreads the prover's per-wire FFTs and gadget evaluations across threads.
 
 ## Build and test
 

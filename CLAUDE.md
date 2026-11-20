@@ -12,6 +12,7 @@ a client proves its input satisfies a validity circuit, and the verifier only ev
 cargo fmt --all -- --check
 cargo clippy --all --all-targets -- -D warnings
 cargo clippy --all --all-targets --features parallel -- -D warnings
+cargo test --all --features parallel
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 cargo llvm-cov --all --fail-uncovered-lines 0
 cargo bench --bench flp -- --test
@@ -54,8 +55,9 @@ when every line runs. `cargo run --example costs` prints each circuit's vector l
 - `prove` runs `eval` on field values (`ProverCalls`) to fill the wire nodes; `gadget_poly` interpolates each wire
   (IFFT), evaluates on a larger domain (FFT), applies the gadget pointwise and interpolates back; nonzero
   coefficients past `poly_len` mean the gadget understates its `degree`, and `prove` returns
-  `FlpError::DegreeMismatch` (`prove_rejects_gadget_above_its_declared_degree`). With `parallel`, the per-wire
-  FFTs and per-point gadget evaluations run on rayon.
+  `FlpError::DegreeMismatch` (`prove_rejects_gadget_above_its_declared_degree`); with no spare coefficients, or
+  when higher terms alias into the kept ones, an understated degree goes undetected and the proof fails to verify.
+  With `parallel`, the per-wire FFTs and per-point gadget evaluations run on rayon.
 - `query` samples a point outside the largest wire domain plus one weight per gadget and per output
   (`QueryCoins`). There is one `LinearQuery` per gadget input slot (Lagrange coefficients at the point) and one
   combined query: the weighted gadget polynomials at the point plus the weighted outputs. `QueryAccumulator::finish`
