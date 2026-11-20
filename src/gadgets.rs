@@ -119,12 +119,13 @@ mod tests {
     use crate::circuit::Gadget;
     use ark_bls12_381::Fr;
     use ark_ff::UniformRand;
+    use std::ops::RangeInclusive;
 
     #[test]
-    #[allow(clippy::reversed_empty_ranges)]
     fn range_product_matches_vanishing_product() {
         let mut rng = ark_std::test_rng();
-        for bounds in [0..=0, 0..=1, 0..=15, 3..=9, 1000..=1040, 5..=4] {
+        let empty = RangeInclusive::new(5, 4);
+        for bounds in [0..=0, 0..=1, 0..=15, 3..=9, 1000..=1040, empty] {
             let gadget = RangeProduct {
                 bounds: bounds.clone(),
             };

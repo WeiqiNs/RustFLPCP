@@ -80,7 +80,8 @@ auxiliary bits, and reject parameters in `check_params` (bit widths through `che
 - Parameters whose decompositions or constants could wrap the field modulus fail with `FlpError::ExceedsField`
   via `check_field_bits`: circuits check their bit widths in `Circuit::check_params`, and `RangeProduct`,
   `SetProduct` and `ParallelSum` check their constants in `Gadget::check_params`, which also covers custom
-  circuits. Only fields under 64 bits can hit this (`tests/goldilocks.rs`).
+  circuits. Only fields under 64 bits can hit the `u64` constant checks (`tests/goldilocks.rs`); bit-width parameters
+  such as `NormBound::input_bits` can exceed any field (`new_rejects_unbuildable_parameters`).
 - `BitRange` drops the upper-gap decomposition when the bounds hold a power-of-two number of values, decided only
   in `BitRange::upper_gap_bits`; a single-value range stays unaligned (`degenerate_single_value_range`).
 - The `Query` carries the verifier's private gadget weights, so `decide` takes it alongside the answers.
