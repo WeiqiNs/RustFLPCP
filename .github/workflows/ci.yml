@@ -60,6 +60,8 @@ jobs:
           files: lcov.info
           disable_search: true
           use_oidc: true
+          flags: unittests
+          fail_ci_if_error: true
 
   dependencies:
     name: Dependency audit
